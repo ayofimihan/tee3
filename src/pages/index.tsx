@@ -78,7 +78,7 @@ export default function Home() {
   }
 
   type PostWithUser = RouterOutputs["posts"]["getAll"][number];
-  const PostView = (props: PostWithUser | any) => {
+  const PostView = (props: PostWithUser) => {
     const { post, author } = props;
 
     function timeOfPost() {
