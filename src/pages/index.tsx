@@ -6,10 +6,10 @@ import { useAuth } from "@clerk/nextjs";
 import { RouterOutputs } from "~/utils/api";
 import Image from "next/image";
 import {
-  LoadingScreen,
-  LoadingSpinner,
-  SmallLoadingSpinner,
+  LoadingScreen
 } from "./components/loader";
+import { SmallLoadingSpinner } from "./components/loader";
+
 import { useState as UseState } from "react";
 import { toast } from "react-hot-toast";
 
