@@ -70,7 +70,7 @@ export default function Home() {
         />
         {content !== "" && (
           <button onClick={() => mutate({ content })} disabled={isPosting}>
-            {isPosting ? <SmallLoadingSpinner /> : "Post"}
+            {isPosting ? <SmallLoadingSpinner /> : "post"}
           </button>
         )}
       </div>
