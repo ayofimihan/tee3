@@ -5,7 +5,13 @@ import { api } from "~/utils/api";
 import { useAuth } from "@clerk/nextjs";
 import { RouterOutputs } from "~/utils/api";
 import Image from "next/image";
-import { LoadingScreen } from "./components/loader";
+import {
+  LoadingScreen,
+  LoadingSpinner,
+  SmallLoadingSpinner,
+} from "./components/loader";
+import { useState as UseState } from "react";
+import { toast } from "react-hot-toast";
 
 export default function Home() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -16,6 +22,29 @@ export default function Home() {
   console.log(data);
 
   function CreatePostWizard() {
+    const [content, setContent] = UseState("");
+    const ctx = api.useContext();
+
+    const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+      onSuccess: () => {
+        setContent("");
+        ctx.posts.getAll.invalidate();
+        toast.success("post succesfully sent!");
+      },
+      onError: (err) => {
+        //error message from zod
+        const errorMessage = err.data?.zodError?.fieldErrors.content;
+        if (errorMessage && errorMessage[0]) {
+          toast.error(errorMessage[0]);
+        }
+        //handling error message from server
+        const errorMessageFromServer = err.data?.code;
+        console.log(errorMessageFromServer);
+        if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
+          toast.error("Touch Grass Omope");
+        }
+      },
+    });
     const { user } = useUser();
     console.log(user?.id);
     if (!user) {
@@ -35,7 +64,15 @@ export default function Home() {
           type="text"
           placeholder="kilon poppin"
           className="  w-full bg-transparent text-white outline-none"
+          onChange={(e) => setContent(e.target.value)}
+          value={content}
+          disabled={isPosting}
         />
+        {content !== "" && (
+          <button onClick={() => mutate({ content })} disabled={isPosting}>
+            {isPosting ? <SmallLoadingSpinner /> : "Post"}
+          </button>
+        )}
       </div>
     );
   }
@@ -91,7 +128,9 @@ export default function Home() {
 
         <div className="flex flex-col">
           <div className="flex gap-2 text-xs">
-            <div className="text-xs text-pink-100">{`@${author.username}`}</div>{" "}
+            <div className="text-xs text-pink-100">{`@${
+              author.username || author.name
+            }`}</div>{" "}
             ·<div className="font-thin"> {timeOfPost()} </div>
           </div>
           <div className="flex items-center p-2">{post.content}</div>
@@ -108,7 +147,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen justify-center">
-        <div className="border-grey w-full border bg-slate-700 md:max-w-2xl">
+        <div className=" w-full  md:max-w-2xl">
           <CreatePostWizard />
           <div className="border border-green-400 p-4">
             {isLoaded && isSignedIn && <SignOutButton />}

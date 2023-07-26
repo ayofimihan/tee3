@@ -1,7 +1,12 @@
 import CircleLoader from "react-spinners/CircleLoader";
+import ClipLoader from "react-spinners/ClipLoader";
 
 export const LoadingSpinner = () => {
   return <CircleLoader color="pink" />;
+};
+
+export const SmallLoadingSpinner = () => {
+  return <ClipLoader color="pink" size={20} />;
 };
 
 export const LoadingScreen = () => {
