@@ -6,8 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "check-types": "tsc --noemit",
+    "lint": "npm run check-types && next lint"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.22.1",

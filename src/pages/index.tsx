@@ -26,16 +26,16 @@ export default function Home() {
     const ctx = api.useContext();
 
     const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
-      onSuccess: () => {
+      onSuccess: async () => {
         setContent("");
-        ctx.posts.getAll.invalidate();
+        await ctx.posts.getAll.invalidate();
         toast.success("post succesfully sent!");
       },
       onError: (err) => {
         //error message from zod
-        const errorMessage = err.data?.zodError?.fieldErrors.content;
-        if (errorMessage && errorMessage[0]) {
-          toast.error(errorMessage[0]);
+        const errorMessage = err.data?.zodError?.fieldErrors?.content?.[0];
+        if (errorMessage) {
+          toast.error(errorMessage);
         }
         //handling error message from server
         const errorMessageFromServer = err.data?.code;
@@ -129,7 +129,7 @@ export default function Home() {
         <div className="flex flex-col">
           <div className="flex gap-2 text-xs">
             <div className="text-xs text-pink-100">{`@${
-              author.username || author.name
+              author.username ?? author.name
             }`}</div>{" "}
             ·<div className="font-thin"> {timeOfPost()} </div>
           </div>
@@ -156,7 +156,7 @@ export default function Home() {
           {isSignedIn && (
             <div className="flex flex-col">
               {data?.map((fullPost) => (
-                <PostView {...fullPost} />
+                <PostView {...fullPost} key={fullPost?.post.id} />
               ))}
             </div>
           )}
