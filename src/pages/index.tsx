@@ -63,7 +63,7 @@ export default function Home() {
         <input
           type="text"
           placeholder="kilon poppin"
-          className="  w-full bg-transparent text-white outline-none"
+          className="  bg-transparen w-full outline-none"
           onChange={(e) => setContent(e.target.value)}
           value={content}
           disabled={isPosting}
