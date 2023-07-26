@@ -10,6 +10,7 @@ import type { User } from "@clerk/nextjs/dist/types/server";
 import { TRPCError } from "@trpc/server";
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis";
+import Filter from "bad-words";
 
 // Define a function to filter user data for client-side consumption
 const filterUserForClient = (user: User) => {
@@ -72,15 +73,19 @@ export const postRouter = createTRPCRouter({
   create: privateProcedure
     .input(
       z.object({
-        content: z
-          .string()
-          .emoji({ message: "Post only Emojis sir" })
-          .min(1)
-          .max(280),
+        content: z.string().min(1).max(280),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const authorId = ctx.userId;
+      const filter = new Filter();
+
+      if (filter.isProfane(input.content)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Content contains profanity",
+        });
+      }
       const { success } = await ratelimit.limit(authorId);
       if (!success) {
         throw new TRPCError({
