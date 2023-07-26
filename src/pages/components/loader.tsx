@@ -1,11 +1,13 @@
+// pages/components/loader.js
+import React from "react";
 import CircleLoader from "react-spinners/CircleLoader";
 import ClipLoader from "react-spinners/ClipLoader";
 
-export const LoadingSpinner = () => {
+const LoadingSpinner = () => {
   return <CircleLoader color="pink" />;
 };
 
-export const SmallLoadingSpinner = () => {
+const SmallLoadingSpinner = () => {
   return <ClipLoader color="pink" size={20} />;
 };
 
