@@ -11,11 +11,21 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 model Post {
   id       String   @id @default(cuid())
   title    DateTime @default(now())
   content  String? @db.VarChar(255)
-  authorId   String
+  authorId String
+  likes    Like[]
   @@index([authorId])
 }
+
+model Like {
+  id      String  @id @default(cuid())
+  userId  String 
+  postId  String  
+  post    Post    @relation(fields: [postId], references: [id])
+  @@unique([userId, postId])
+  
+}
+
