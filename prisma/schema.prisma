@@ -1,5 +1,40 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// datasource db {
+//   provider = "mysql"
+//   url      = env("DATABASE_URL")
+//   relationMode = "prisma"
+// }
+
+// generator client {
+//   provider = "prisma-client-js"
+// }
+
+// model Post {
+//   id       String   @id @default(cuid())
+//   title    DateTime @default(now())
+//   content  String? @db.VarChar(255)
+//   authorId String
+//   likes    Like[]
+//   @@index([authorId])
+// }
+
+// model Like {
+//   id      String  @id @default(cuid())
+//   userId  String 
+//   postId  String  
+//   post    Post    @relation(fields: [postId], references: [id])
+//   @@unique([userId, postId])
+
+// }
+
+
+
+
+// clkmgxqg100100xqnxcs4nqer
+//
+
 
 datasource db {
   provider = "mysql"
@@ -10,13 +45,13 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
-
 model Post {
-  id       String   @id @default(cuid())
-  title    DateTime @default(now())
-  content  String? @db.VarChar(255)
+  id String @id @default(cuid())
+  title DateTime @default(now())
+  content String @db.VarChar(255)
   authorId String
-  likes    Like[]
+  likes Like[]
+  comments Comment[]
   @@index([authorId])
 }
 
@@ -26,6 +61,17 @@ model Like {
   postId  String  
   post    Post    @relation(fields: [postId], references: [id])
   @@unique([userId, postId])
-  
 }
 
+
+model Comment {
+  id String @id @default(cuid())
+  content String? @db.VarChar(255)
+  authorName String // Or authorEmail, or any other identifier you want for the author
+  authorId String
+  postId String
+  parentCommentId String?
+  post Post @relation(fields: [postId], references: [id])
+  parentComment Comment? @relation("ChildComments", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childComments Comment[] @relation("ChildComments")
+}

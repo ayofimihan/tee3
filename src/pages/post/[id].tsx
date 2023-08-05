@@ -1,6 +1,94 @@
 import Head from "next/head";
+import Link from "next/link";
+import { RouterOutputs, api } from "~/utils/api";
+import Image from "next/image";
+import { useContext } from "react";
+import { title } from "process";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
+import { createServerSideHelpers } from "@trpc/react-query/server";
+import { appRouter } from "~/server/api/root";
+import { prisma } from "~/server/db";
+import superjson from "superjson";
 
-export default function SinglePost() {
+export default function SinglePost(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>
+) {
+  console.log(props, "props from single post");
+  const postQuery = api.posts.getSinglePostById.useQuery({
+    id: props.id,
+  });
+  const { data } = postQuery;
+  console.log(data, "data returned from getserverSideProps");
+  type PostWithUser = RouterOutputs["posts"]["getSinglePostById"];
+  const PostView = (props: PostWithUser) => {
+    const { post } = props;
+    const ctx = api.useContext();
+    function timeOfPost() {
+      const time = title;
+      // console.log(time);
+      const formattedTime = new Date(time).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+      });
+      // console.log(formattedTime);
+
+      const currentTime = new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+      });
+      // console.log(currentTime);
+      const timeDifference =
+        new Date(currentTime).getTime() - new Date(formattedTime).getTime();
+      // console.log(timeDifference);
+      const timeDifferenceInMinutes = timeDifference / 60000;
+      console.log(timeDifferenceInMinutes);
+      const timeDifferenceInHours = timeDifferenceInMinutes / 60;
+      // console.log(timeDifferenceInHours);
+      const roundedTime = Math.round(timeDifferenceInHours);
+      if (timeDifferenceInHours < 1) {
+        return `${Math.round(timeDifferenceInMinutes)}m`;
+      }
+      return `${roundedTime}h`;
+    }
+    return (
+      // <div key={id} className="flex border border-pink-200 p-3  ">
+      //   <div className="h-14 w-14 ">
+      //     {" "}
+      //     <Image
+      //       src={""}
+      //       alt="profileimage"
+      //       width={200}
+      //       height={200}
+      //       className=" rounded-full p-2"
+      //     />{" "}
+      //   </div>
+
+      //   <div className="flex flex-col">
+      //     <div className="flex gap-2 text-xs">
+      //       <div className="text-xs text-pink-100">{`@${
+      //         // data!.username ?? data?.name
+      //       }`}</div>{" "}
+      //       ·
+      //       <div className="font-thin">
+      //         {" "}
+      //         <Link href={`/post/${id}`}>{timeOfPost()} </Link>
+      //       </div>
+      //     </div>
+      //     <div className="flex items-center p-2">{content}</div>
+      //   </div>
+      // </div>
+      <div>hi</div>
+    );
+  };
+
   return (
     <>
       <Head>
@@ -9,8 +97,27 @@ export default function SinglePost() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen justify-center">
-        <div className="flex w-1/2 flex-col"> Single Post Page</div>
+        <div className="flex w-1/2 flex-col"> {}</div>
       </main>
     </>
   );
+}
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>
+) {
+  const helpers = createServerSideHelpers({
+    router: appRouter,
+    ctx: { prisma, userId: null },
+    transformer: superjson,
+  });
+  const id = context.params?.id as string;
+
+  await helpers.posts.getSinglePostById.prefetch({ id: id });
+  return {
+    props: {
+      trpcState: helpers.dehydrate(),
+      id,
+    },
+  };
 }

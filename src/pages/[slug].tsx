@@ -3,10 +3,7 @@ import { RouterOutputs, api } from "~/utils/api";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import {
   GetServerSidePropsContext,
-  GetStaticPaths,
-  GetStaticPropsContext,
   InferGetServerSidePropsType,
-  InferGetStaticPropsType,
 } from "next";
 import { profileRouter } from "~/server/api/routers/profile";
 import superjson from "superjson";

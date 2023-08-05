@@ -44,9 +44,20 @@ export const postRouter = createTRPCRouter({
       //include likes
       include: {
         likes: true,
+        comments: {
+          // Include the comments for each post
+          include: {
+            // Include the child comments for each comment
+            childComments: {
+              include: {
+                childComments: true,
+              },
+            },
+          },
+        },
       },
     });
-    // console.log(posts);
+    console.log(posts);
 
     // Extract authorIds from posts
     const authorIds = posts.map((post) => post.authorId);
@@ -74,6 +85,33 @@ export const postRouter = createTRPCRouter({
       };
     });
   }),
+
+  //getSinglePostById
+  getSinglePostById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { id } = input;
+      const post = await ctx.prisma.post.findUnique({
+        where: {
+          id: id,
+        },
+        include: {
+          likes: true,
+          comments: {
+            // Include the comments for each post
+            include: {
+              // Include the child comments for each comment which i dont totally understand
+              childComments: {
+                include: {
+                  childComments: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return { post };
+    }),
 
   //create private procedure
   create: privateProcedure
