@@ -18,6 +18,7 @@ import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { AiOutlineHeart } from "react-icons/ai";
 import { AiFillHeart } from "react-icons/ai";
+import { ProgressBar } from "./components/progressBar";
 
 export default function Home() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -36,6 +37,9 @@ export default function Home() {
     const { user } = useUser();
     console.log(user?.id, "champion id");
     const queryClient = useQueryClient();
+    const maxChar = 150;
+    const remChar = maxChar - content.length;
+    const [progress, setProgress] = useState(0);
 
     const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
       onSuccess: () => {
@@ -57,35 +61,69 @@ export default function Home() {
       return;
     }
     return (
-      <div className="flex border border-pink-200 pl-3">
+      <div className="flex border border-pink-200 p-3 pl-3">
         {" "}
-        <div className=" p-2">
+        <div className="  p-2">
           <UserButton
             afterSignOutUrl="/"
             appearance={{
               elements: {
-                avatarBox: "w-12 h-12",
+                avatarBox: "w-16 h-16 border border-solid border-green-400",
               },
             }}
           />{" "}
         </div>
         <input
           type="text"
-          placeholder="kilon shele?"
-          className="  w-full  bg-transparent outline-none "
+          placeholder="kilon shele? click on the profile picture to sign out"
+          className="  mr-4  w-full bg-transparent outline-none "
           onChange={(e) => setContent(e.target.value)}
           value={content}
           disabled={isPosting}
         />
-        {content !== "" && (
-          <button
-            className="pr-4"
-            onClick={() => mutate({ content })}
-            disabled={isPosting}
-          >
-            {isPosting ? <SmallLoadingSpinner /> : "Post"}
-          </button>
-        )}
+        <button
+          className="pr-4"
+          onClick={() => mutate({ content })}
+          disabled={isPosting}
+        >
+          {" "}
+          {isPosting ? (
+            <SmallLoadingSpinner />
+          ) : (
+            <div>
+              <button
+                disabled={!content}
+                className={`rounded-full border px-4 py-1 ${
+                  content
+                    ? "bg-pink-400 text-black"
+                    : "cursor-not-allowed bg-pink-200 text-gray-500 opacity-50"
+                }`}
+              >
+                post
+              </button>
+
+              {content && (
+                <div className="mt-2 flex gap-2 text-sm">
+                  <span className="flex h-5 justify-center text-center">
+                    {" "}
+                    <ProgressBar value={content.length} />
+                  </span>
+                  <span
+                    className={
+                      remChar <= 0
+                        ? "text-red-600"
+                        : remChar <= 20
+                        ? "text-yellow-400"
+                        : "text-stone-500 dark:text-gray-400"
+                    }
+                  >
+                    {remChar}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </button>
       </div>
     );
   }
@@ -123,6 +161,10 @@ export default function Home() {
             toast.error("You need to log in to like a post.");
           } else if (errorMessageFromServer === "BAD_REQUEST") {
             toast.error("Failed to like the post. Please try again later.");
+          } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
+            toast.error(
+              "You are liking too many posts. Please try again later."
+            );
           } else {
             toast.error(
               "An unexpected error occurred. Please try again later."
@@ -173,9 +215,9 @@ export default function Home() {
             <Image
               src={author.profileImageUrl}
               alt="profileimage"
-              width={200}
-              height={200}
-              className="rounded-full p-2"
+              width={400}
+              height={400}
+              className="rounded-full"
             />{" "}
           </Link>
         </div>
@@ -192,7 +234,14 @@ export default function Home() {
               {" "}
               <Link href={`/post/${post.id}`}>{timeOfPost()} </Link>
             </div>
-            <div className="text-xs text-pink-100">Likes: {likeCount}</div>
+          </div>
+          <div className="flex items-center p-2">
+            <div className=" break-all">{post.content}</div>
+          </div>{" "}
+          <div
+            className="-mb-2 mr-2 flex items-center justify-end gap-1
+          "
+          >
             <button
               className="text-xs text-pink-100"
               onClick={() => {
@@ -200,12 +249,10 @@ export default function Home() {
                 setLiked((prevLiked) => !prevLiked);
               }}
             >
-              {liked ? <AiFillHeart /> : <AiOutlineHeart />}
+              {liked ? <AiFillHeart size={15} /> : <AiOutlineHeart size={15} />}
             </button>
+            <div className="text-xs text-pink-100">{likeCount}</div>
           </div>
-        </div>
-        <div className="flex items-center p-2">
-          <div className=" break-all">{post.content}</div>
         </div>
       </div>
     );

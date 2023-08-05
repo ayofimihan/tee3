@@ -27,7 +27,7 @@ const filterUserForClient = (user: User) => {
 //touch grass nigga
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  limiter: Ratelimit.slidingWindow(2, "1 m"),
   analytics: true,
 });
 
@@ -125,7 +125,6 @@ export const postRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.userId;
       const postId = input.postId;
-     
 
       //check if there is a user logged in
       if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -141,6 +140,14 @@ export const postRouter = createTRPCRouter({
       console.log(post);
       //check if the post exists
       if (!post) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const { success } = await ratelimit.limit(userId);
+      if (!success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "You are liking too much",
+        });
+      }
       //check if the user has already liked the post
       const hasLikedYet = post.likes.find((like) => like.userId === userId);
       console.log(hasLikedYet, "hasLikedYet");
