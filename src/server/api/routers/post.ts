@@ -110,12 +110,37 @@ export const postRouter = createTRPCRouter({
           },
         },
       });
-      return { post };
+      const filterUserForClient = (user: User) => {
+        // Return a new object with only the required properties
+        return {
+          id: user.id,
+          username: user.username,
+          profileImageUrl: user.profileImageUrl,
+          name: user.firstName + " " + user.lastName,
+        };
+      };
+      const authorId = post?.authorId;
+      if (typeof authorId === "undefined") {
+        //  case when the authorId is undefined
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Author ID not found in post data",
+        });
+      }
+      const author = await clerkClient.users.getUser(authorId);
+      if (!author) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Author not found",
+        });
+      }
+
+      return { post, author: filterUserForClient(author) };
     }),
 
   //create private procedure
   create: privateProcedure
-    .input(
+    .input( 
       z.object({
         content: z.string().min(1).max(100),
       })

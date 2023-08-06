@@ -3,7 +3,6 @@ import Link from "next/link";
 import { RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
 import { useContext } from "react";
-import { title } from "process";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
@@ -11,6 +10,12 @@ import { createServerSideHelpers } from "@trpc/react-query/server";
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import superjson from "superjson";
+import { UserButton } from "@clerk/nextjs";
+import toast from "react-hot-toast";
+import { SmallLoadingSpinner } from "../components/loader";
+import { ProgressBar } from "../components/progressBar";
+import { useUser } from "@clerk/nextjs";
+import { useState } from "react";
 
 export default function SinglePost(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
@@ -20,23 +25,132 @@ export default function SinglePost(
     id: props.id,
   });
   const { data } = postQuery;
-  console.log(data, "data returned from getserverSideProps");
+  console.log(data, "data from single post");
   type PostWithUser = RouterOutputs["posts"]["getSinglePostById"];
-  const PostView = (props: PostWithUser) => {
-    const { post } = props;
-    const ctx = api.useContext();
-    function timeOfPost() {
-      const time = title;
-      // console.log(time);
-      const formattedTime = new Date(time).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      });
-      // console.log(formattedTime);
+  const comment = data?.post?.comments;
+  console.log(comment, "comment");
 
+  if (!comment) {
+    return <>No comments yet, post one!</>;
+  }
+
+  //create reply component
+
+  function CreatePostWizard() {
+    const { user } = useUser();
+
+    const [content, setContent] = useState("");
+    const ctx = api.useContext();
+    const maxChar = 150;
+    const remChar = maxChar - content.length;
+    const [progress, setProgress] = useState(0);
+
+    const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+      onSuccess: () => {
+        setContent("");
+        ctx.posts.getAll.invalidate();
+      },
+      onError: (e) => {
+        const errorMessage = e.data?.zodError?.fieldErrors.content;
+        if (errorMessage && errorMessage[0]) {
+          toast.error(errorMessage[0]);
+        } else {
+          toast.error("Failed to post! Please try again later.");
+        }
+      },
+    });
+
+    // console.log(user?.id);
+    if (!user) {
+      return;
+    }
+    return (
+      <div className="flex border border-pink-200 p-3 pl-3">
+        {" "}
+        <div className="  p-2">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "w-16 h-16 border border-solid border-green-400",
+              },
+            }}
+          />{" "}
+        </div>
+        <input
+          type="text"
+          placeholder="type your reply here"
+          className="  mr-4  w-full bg-transparent outline-none "
+          onChange={(e) => setContent(e.target.value)}
+          value={content}
+          disabled={isPosting}
+        />
+        <button
+          className="pr-4"
+          onClick={() => mutate({ content })}
+          disabled={isPosting}
+        >
+          {" "}
+          {isPosting ? (
+            <SmallLoadingSpinner />
+          ) : (
+            <div>
+              <button
+                disabled={!content}
+                className={`rounded-full border px-4 py-1 ${
+                  content
+                    ? "bg-pink-400 text-black"
+                    : "cursor-not-allowed bg-pink-200 text-gray-500 opacity-50"
+                }`}
+              >
+                post
+              </button>
+
+              {content && (
+                <div className="mt-2 flex gap-2 text-sm">
+                  <span className="flex h-5 justify-center text-center">
+                    {" "}
+                    <ProgressBar value={content.length} />
+                  </span>
+                  <span
+                    className={
+                      remChar <= 0
+                        ? "text-red-600"
+                        : remChar <= 20
+                        ? "text-yellow-400"
+                        : "text-stone-500 dark:text-gray-400"
+                    }
+                  >
+                    {remChar}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  //post view component
+  const PostView = (props: PostWithUser) => {
+    const ctx = api.useContext();
+    const time = data!.post!.title;
+    console.log(time, "time");
+
+    const formattedDate = new Date(time).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const formattedTime = new Date(time).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+    });
+
+    //time logic currently only shows minutes and hours, wanna implement days, weeks, months, years as well
+    function timeOfPost() {
       const currentTime = new Date().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -44,6 +158,7 @@ export default function SinglePost(
         hour: "numeric",
         minute: "numeric",
       });
+
       // console.log(currentTime);
       const timeDifference =
         new Date(currentTime).getTime() - new Date(formattedTime).getTime();
@@ -59,33 +174,35 @@ export default function SinglePost(
       return `${roundedTime}h`;
     }
     return (
-      // <div key={id} className="flex border border-pink-200 p-3  ">
-      //   <div className="h-14 w-14 ">
-      //     {" "}
-      //     <Image
-      //       src={""}
-      //       alt="profileimage"
-      //       width={200}
-      //       height={200}
-      //       className=" rounded-full p-2"
-      //     />{" "}
-      //   </div>
+      <div key={data?.post?.id} className="flex border border-pink-200 p-3  ">
+        <div className="h-14 w-14 ">
+          {" "}
+          <Image
+            src={data?.author.profileImageUrl as string}
+            alt="profileimage"
+            width={200}
+            height={200}
+            className=" rounded-full p-2"
+          />{" "}
+        </div>
 
-      //   <div className="flex flex-col">
-      //     <div className="flex gap-2 text-xs">
-      //       <div className="text-xs text-pink-100">{`@${
-      //         // data!.username ?? data?.name
-      //       }`}</div>{" "}
-      //       ·
-      //       <div className="font-thin">
-      //         {" "}
-      //         <Link href={`/post/${id}`}>{timeOfPost()} </Link>
-      //       </div>
-      //     </div>
-      //     <div className="flex items-center p-2">{content}</div>
-      //   </div>
-      // </div>
-      <div>hi</div>
+        <div className="flex flex-col">
+          <div className="flex gap-2 text-xs">
+            <div className="text-xs text-pink-100">{`@${
+              data!.author.username ?? data?.author.name
+            }`}</div>{" "}
+            ·
+            <div className="font-thin">
+              {" "}
+              <Link href={`/post/${data?.post?.id}`}>{timeOfPost()} </Link>
+            </div>
+          </div>
+          <div className="flex items-center p-2">{data?.post?.content}</div>
+          <div className="flex gap-2 text-xs">
+            {formattedDate} - {formattedTime}
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -96,8 +213,16 @@ export default function SinglePost(
         <meta name="description" content="Generated by create-t3-app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex h-screen justify-center">
-        <div className="flex w-1/2 flex-col"> {}</div>
+      <main className="flex justify-center">
+        <div className=" w-full  md:max-w-2xl">
+          {data?.post && <PostView {...data} />}
+          <CreatePostWizard />
+          <div className=" w-full  md:max-w-2xl">
+            {comment.map((comment) => {
+              return <div>{comment.content}</div>;
+            })}
+          </div>
+        </div>
       </main>
     </>
   );
@@ -111,9 +236,12 @@ export async function getServerSideProps(
     ctx: { prisma, userId: null },
     transformer: superjson,
   });
-  const id = context.params?.id as string;
+  const id = context.params?.id;
+  if (typeof id !== "string") throw new Error("no id");
 
   await helpers.posts.getSinglePostById.prefetch({ id: id });
+  // Check if the post data is available and has the 'authorId' field
+
   return {
     props: {
       trpcState: helpers.dehydrate(),

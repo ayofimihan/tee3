@@ -1,10 +1,7 @@
 import Head from "next/head";
 import { RouterOutputs, api } from "~/utils/api";
 import { createServerSideHelpers } from "@trpc/react-query/server";
-import {
-  GetServerSidePropsContext,
-  InferGetServerSidePropsType,
-} from "next";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { profileRouter } from "~/server/api/routers/profile";
 import superjson from "superjson";
 import { appRouter } from "~/server/api/root";
@@ -134,8 +131,13 @@ export async function getServerSideProps(
   });
   const slug = context.params?.slug as string;
 
-  await helpers.profile.getUserByUsername.prefetch({ username: slug });
-  await helpers.profile.getPostsByAuthorId.prefetch({ authorId: slug });
+  const user = await helpers.profile.getUserByUsername.prefetch({
+    username: slug,
+  });
+  const post = await helpers.profile.getPostsByAuthorId.prefetch({
+    authorId: slug,
+  });
+  
   return {
     props: {
       trpcState: helpers.dehydrate(),
