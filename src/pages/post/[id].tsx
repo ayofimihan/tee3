@@ -16,6 +16,7 @@ import { SmallLoadingSpinner } from "../components/loader";
 import { ProgressBar } from "../components/progressBar";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
+import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 
 export default function SinglePost(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
@@ -134,7 +135,6 @@ export default function SinglePost(
 
   //post view component
   const PostView = (props: PostWithUser) => {
-    const ctx = api.useContext();
     const time = data!.post!.title;
     console.log(time, "time");
 
@@ -161,7 +161,7 @@ export default function SinglePost(
 
       // console.log(currentTime);
       const timeDifference =
-        new Date(currentTime).getTime() - new Date(formattedTime).getTime();
+        new Date(currentTime).getTime() - new Date(time).getTime();
       // console.log(timeDifference);
       const timeDifferenceInMinutes = timeDifference / 60000;
       console.log(timeDifferenceInMinutes);
@@ -206,6 +206,127 @@ export default function SinglePost(
     );
   };
 
+  const CommentView = (props: PostWithUser) => {
+    const [liked, setLiked] = useState();
+    const [likeCount, setLikeCount] = useState(0);
+    const ctx = api.useContext();
+
+    const { mutate, isLoading: isLiking } = api.posts.likeComment.useMutation({
+      //optimistically update the like count when the like button is pressed
+      onMutate: () => {
+        setLikeCount((prevCount) => (liked ? prevCount - 1 : prevCount + 1));
+      },
+      onSuccess: () => {
+        ctx.posts.getSinglePostById.invalidate();
+      },
+      onSettled: () => {
+        // Invalidate the posts query after the mutation is settled
+        ctx.posts.getSinglePostById.invalidate();
+      },
+      onError: (err) => {
+        // Check if there's a specific error code from the server
+        const errorMessageFromServer = err?.data?.code;
+        console.log(errorMessageFromServer, "error message from server");
+
+        // Handle different error scenarios accordingly
+        if (errorMessageFromServer === "UNAUTHORIZED") {
+          toast.error("You need to log in to like a post.");
+        } else if (errorMessageFromServer === "BAD_REQUEST") {
+          toast.error("Failed to like the post. Please try again later.");
+        } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
+          toast.error("You are liking too many posts. Please try again later.");
+        } else {
+          toast.error("An unexpected error occurred. Please try again later.");
+        }
+      },
+    });
+    function timeOfPost(createdAt: string) {
+      const currentTime = new Date().getTime();
+      const commentTime = new Date(createdAt).getTime();
+      console.log(currentTime, "current time");
+      console.log(commentTime, "comment time");
+      const timeDifferenceInMinutes = (currentTime - commentTime) / 60000;
+      const timeDifferenceInHours = timeDifferenceInMinutes / 60;
+      const timeDifferenceInDays = timeDifferenceInHours / 24;
+      const timeDifferenceInWeeks = timeDifferenceInDays / 7;
+      const timeDifferenceInMonths = timeDifferenceInDays / 30.4375; // Average days per month
+      const timeDifferenceInYears = timeDifferenceInDays / 365.25; // Average days per year
+
+      if (timeDifferenceInYears >= 1) {
+        return `${Math.round(timeDifferenceInYears)}y`;
+      } else if (timeDifferenceInMonths >= 1) {
+        return `${Math.round(timeDifferenceInMonths)}mo`;
+      } else if (timeDifferenceInWeeks >= 1) {
+        return `${Math.round(timeDifferenceInWeeks)}w`;
+      } else if (timeDifferenceInDays >= 1) {
+        return `${Math.round(timeDifferenceInDays)}d`;
+      } else if (timeDifferenceInHours >= 1) {
+        return `${Math.round(timeDifferenceInHours)}h`;
+      }
+
+      return `${Math.round(timeDifferenceInMinutes)}m`;
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        {props?.post?.comments.map((comment: any) => (
+          <div key={comment.id} className="flex border border-pink-200 p-3">
+            <div className="h-14 w-14">
+              <Image
+                src={comment.profileImage}
+                alt="profileimage"
+                width={200}
+                height={200}
+                className="rounded-full p-2"
+              />
+            </div>
+            <div className="flex flex-grow flex-col">
+              <div className="flex gap-2 text-xs">
+                <div className="text-xs text-pink-100">
+                  @{comment.authorName}
+                </div>
+                <div>·</div>
+                <div className="text-xs font-thin text-gray-500">
+                  {timeOfPost(comment.createdAt)}
+                </div>
+              </div>
+              <div className="flex items-center p-2">{comment.content}</div>
+            </div>
+
+            <div className="flex items-center text-xs text-pink-100">
+              <button
+                className="text-pink-100"
+                onClick={() => {
+                  mutate({ commentId: comment.id });
+                  setLiked((prevLiked) => !prevLiked);
+                }}
+              >
+                {liked ? (
+                  <AiFillHeart size={15} />
+                ) : (
+                  <AiOutlineHeart size={15} />
+                )}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Function to fetch comments for a specific post
+  // async function fetchCommentsForPost(postId: string) {
+  //   // Assuming you have a Prisma client instance available
+  //   const comments = await prisma.comment.findMany({
+  //     where: {
+  //       postId,
+  //     },
+
+  //   });
+
+  //   return comments;
+  // }
+
   return (
     <>
       <Head>
@@ -219,7 +340,7 @@ export default function SinglePost(
           <CreatePostWizard />
           <div className=" w-full  md:max-w-2xl">
             {comment.map((comment) => {
-              return <div>{comment.content}</div>;
+              return <CommentView key={comment.id} {...data} />;
             })}
           </div>
         </div>

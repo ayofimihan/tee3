@@ -100,6 +100,8 @@ export const postRouter = createTRPCRouter({
           comments: {
             // Include the comments for each post
             include: {
+              //include the author of each post
+
               // Include the child comments for each comment which i dont totally understand
               childComments: {
                 include: {
@@ -140,7 +142,7 @@ export const postRouter = createTRPCRouter({
 
   //create private procedure
   create: privateProcedure
-    .input( 
+    .input(
       z.object({
         content: z.string().min(1).max(100),
       })
@@ -177,7 +179,7 @@ export const postRouter = createTRPCRouter({
       return post;
     }),
 
-  //likes mutation
+  //like post mutation
 
   likes: privateProcedure
     .input(
@@ -238,6 +240,74 @@ export const postRouter = createTRPCRouter({
       return {
         post,
         likesCount: post.likes.length,
+      };
+    }),
+  //like comment mutation
+  likeComment: privateProcedure
+    .input(
+      z.object({
+        commentId: z.string(), // Accept commentId as input instead of postId
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      const commentId = input.commentId;
+
+      // Check if there is a user logged in
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Find the comment
+      const comment = await ctx.prisma.comment.findUnique({
+        where: {
+          id: commentId,
+        },
+        include: {
+          likes: true,
+        },
+      });
+
+      console.log(comment, "comment from likeComment mutation");
+
+      // Check if the comment exists
+      if (!comment) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const { success } = await ratelimit.limit(userId);
+      if (!success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "You are liking too much",
+        });
+      }
+
+      // Check if the user has already liked the comment
+      const hasLikedYet = comment.likes.find((like) => like.userId === userId);
+
+      // If the user has already liked the comment, then unlike it
+      if (hasLikedYet) {
+        await ctx.prisma.like.delete({
+          where: {
+            id: hasLikedYet.id,
+          },
+        });
+      }
+      // If the user hasn't liked yet, like it.
+      else if (!hasLikedYet) {
+        await ctx.prisma.like.create({
+          data: {
+            userId, // ctx.userId from the backend
+            commentId, //input.commentId from the frontend
+            postId: comment.postId, // Include the postId from the comment
+
+            // input.commentId from the frontend
+          },
+        });
+      }
+
+      // Return the updated comment and its likes count
+      return {
+        comment,
+        likesCount: comment.likes.length,
+        postId: comment.postId,
       };
     }),
 });

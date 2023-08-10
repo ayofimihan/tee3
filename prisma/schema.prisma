@@ -59,7 +59,10 @@ model Like {
   id      String  @id @default(cuid())
   userId  String 
   postId  String  
+  commentId String? // New field to reference Comment model
   post    Post    @relation(fields: [postId], references: [id])
+  comment Comment? @relation("CommentLikes", fields: [commentId], references: [id])
+
   @@unique([userId, postId])
 }
 
@@ -67,11 +70,16 @@ model Like {
 model Comment {
   id String @id @default(cuid())
   content String? @db.VarChar(255)
+  createdAt DateTime @default(now())
+  profileImage String @default("https://img.freepik.com/free-vector/illustration-user-avatar-icon_53876-5907.jpg?w=1380&t=st=1691410267~exp=1691410867~hmac=8bf01a690a949fbb24812531db8fd8f7604b57e9d54e2aa6a6a4ef10e976f414")
   authorName String // Or authorEmail, or any other identifier you want for the author
   authorId String
   postId String
   parentCommentId String?
   post Post @relation(fields: [postId], references: [id])
+  likes Like[] @relation("CommentLikes")
+  likeCount Int @default(likes.length())
   parentComment Comment? @relation("ChildComments", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   childComments Comment[] @relation("ChildComments")
+  @@index([authorId])
 }

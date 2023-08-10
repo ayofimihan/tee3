@@ -145,7 +145,6 @@ export default function Home() {
           setLikeCount((prevCount) => (liked ? prevCount - 1 : prevCount + 1));
         },
         onSuccess: () => {
-          ctx.posts.getAll.invalidate();
           console.log("liked");
         },
         onSettled: () => {
@@ -246,7 +245,6 @@ export default function Home() {
               className="text-xs text-pink-100"
               onClick={() => {
                 mutateLike({ postId: post.id });
-                setLiked((prevLiked) => !prevLiked);
               }}
             >
               {liked ? <AiFillHeart size={15} /> : <AiOutlineHeart size={15} />}
