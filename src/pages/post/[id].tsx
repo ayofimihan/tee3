@@ -298,7 +298,7 @@ export default function SinglePost(
                 className="text-pink-100"
                 onClick={() => {
                   mutate({ commentId: comment.id });
-                  setLiked((prevLiked) => !prevLiked);
+                  // setLiked((prevLiked) => !prevLiked);
                 }}
               >
                 {liked ? (
