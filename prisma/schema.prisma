@@ -1,39 +1,4 @@
-// // This is your Prisma schema file,
-// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// datasource db {
-//   provider = "mysql"
-//   url      = env("DATABASE_URL")
-//   relationMode = "prisma"
-// }
-
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// model Post {
-//   id       String   @id @default(cuid())
-//   title    DateTime @default(now())
-//   content  String? @db.VarChar(255)
-//   authorId String
-//   likes    Like[]
-//   @@index([authorId])
-// }
-
-// model Like {
-//   id      String  @id @default(cuid())
-//   userId  String 
-//   postId  String  
-//   post    Post    @relation(fields: [postId], references: [id])
-//   @@unique([userId, postId])
-
-// }
-
-
-
-
-// clkmgxqg100100xqnxcs4nqer
-//
 
 
 datasource db {
@@ -78,7 +43,6 @@ model Comment {
   parentCommentId String?
   post Post @relation(fields: [postId], references: [id])
   likes Like[] @relation("CommentLikes")
-  likeCount Int @default(likes.length())
   parentComment Comment? @relation("ChildComments", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   childComments Comment[] @relation("ChildComments")
   @@index([authorId])

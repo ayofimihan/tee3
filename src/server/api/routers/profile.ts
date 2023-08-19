@@ -56,6 +56,10 @@ export const profileRouter = createTRPCRouter({
         where: {
           authorId: authorId,
         },
+        include: {
+          likes: true,
+          comments: true,
+        },
         orderBy: {
           title: "desc", // Order posts by createdAt in descending order but i named it title and dont have time to change that in the db
         },

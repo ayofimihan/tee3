@@ -19,6 +19,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AiOutlineHeart } from "react-icons/ai";
 import { AiFillHeart } from "react-icons/ai";
 import { ProgressBar } from "./components/progressBar";
+import { SignIn } from "@clerk/nextjs";
+import Footer from "./components/footer";
 
 export default function Home() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -47,11 +49,18 @@ export default function Home() {
         ctx.posts.getAll.invalidate();
       },
       onError: (e) => {
-        const errorMessage = e.data?.zodError?.fieldErrors.content;
-        if (errorMessage && errorMessage[0]) {
-          toast.error(errorMessage[0]);
+        // Check if there's a specific error code from the server
+        const errorMessageFromServer = e?.data?.code;
+        if (errorMessageFromServer === "UNAUTHORIZED") {
+          toast.error("You need to log in to post.");
+        } else if (errorMessageFromServer === "BAD_REQUEST") {
+          toast.error("You cant say that sorry. Say something nicer");
+        } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
+          toast.error(
+            "You are posting too many posts. Try again in a few minutes"
+          );
         } else {
-          toast.error("Failed to post! Please try again later.");
+          toast.error("An unexpected error occurred. Please try again later.");
         }
       },
     });
@@ -207,7 +216,10 @@ export default function Home() {
       return `${roundedTime}h`;
     }
     return (
-      <div key={post.id} className="flex border border-pink-200 p-3 ">
+      <div
+        key={post.id}
+        className="flex border border-pink-200 p-3 hover:bg-pink-100 "
+      >
         <div className="h-14 w-14">
           <Link href={`/${post.authorId}`}>
             {" "}
@@ -224,7 +236,7 @@ export default function Home() {
         <div className="ml-3 flex flex-1 flex-col">
           <div className="flex gap-2 text-xs">
             <Link href={`/${post.authorId}`}>
-              <div className="text-xs text-pink-100">{`@${
+              <div className="text-xs text-pink-400">{`@${
                 author.username ?? author.name
               }`}</div>{" "}
             </Link>
@@ -235,7 +247,9 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center p-2">
-            <div className=" break-all">{post.content}</div>
+            <Link href={`/post/${post.id}`}>
+              <div className=" break-all">{post.content}</div>
+            </Link>
           </div>{" "}
           <div
             className="-mb-2 mr-2 flex items-center justify-end gap-1
@@ -245,11 +259,16 @@ export default function Home() {
               className="text-xs text-pink-100"
               onClick={() => {
                 mutateLike({ postId: post.id });
+                setLiked(!liked);
               }}
             >
-              {liked ? <AiFillHeart size={15} /> : <AiOutlineHeart size={15} />}
+              {liked ? (
+                <AiFillHeart size={15} color="black" />
+              ) : (
+                <AiOutlineHeart size={15} color="black" />
+              )}
             </button>
-            <div className="text-xs text-pink-100">{likeCount}</div>
+            <div className="text-xs text-slate-700">{likeCount}</div>
           </div>
         </div>
       </div>
@@ -264,12 +283,13 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex justify-center">
-        <div className=" w-full  md:max-w-2xl">
+        <div className=" w-full  md:max-w-3xl">
           <CreatePostWizard />
           {!isSignedIn && (
-            <div className="flex justify-between">
+            //centered login page
+            <div className="flex h-screen items-center justify-center">
               {" "}
-              <SignInButton /> <SignUpButton />{" "}
+              <SignIn />
             </div>
           )}
           {isSignedIn && (
@@ -279,8 +299,12 @@ export default function Home() {
               ))}
             </div>
           )}
+          <div className="flex justify-center border p-10 align-middle">
+            You're all caught up!
+          </div>
         </div>
       </main>
+      <Footer />
     </>
   );
 }

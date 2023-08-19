@@ -17,6 +17,14 @@ import { ProgressBar } from "../components/progressBar";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function SinglePost(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
@@ -37,7 +45,7 @@ export default function SinglePost(
 
   //create reply component
 
-  function CreatePostWizard() {
+  function CreateCommentWizard() {
     const { user } = useUser();
 
     const [content, setContent] = useState("");
@@ -46,10 +54,10 @@ export default function SinglePost(
     const remChar = maxChar - content.length;
     const [progress, setProgress] = useState(0);
 
-    const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    const { mutate, isLoading: isPosting } = api.posts.addComment.useMutation({
       onSuccess: () => {
         setContent("");
-        ctx.posts.getAll.invalidate();
+        ctx.posts.getSinglePostById.invalidate();
       },
       onError: (e) => {
         const errorMessage = e.data?.zodError?.fieldErrors.content;
@@ -80,7 +88,7 @@ export default function SinglePost(
         </div>
         <input
           type="text"
-          placeholder="type your reply here"
+          placeholder="Post your reply!"
           className="  mr-4  w-full bg-transparent outline-none "
           onChange={(e) => setContent(e.target.value)}
           value={content}
@@ -88,7 +96,7 @@ export default function SinglePost(
         />
         <button
           className="pr-4"
-          onClick={() => mutate({ content })}
+          onClick={() => mutate({ content: content, postId: props.id })}
           disabled={isPosting}
         >
           {" "}
@@ -104,7 +112,7 @@ export default function SinglePost(
                     : "cursor-not-allowed bg-pink-200 text-gray-500 opacity-50"
                 }`}
               >
-                post
+                Reply
               </button>
 
               {content && (
@@ -135,6 +143,9 @@ export default function SinglePost(
 
   //post view component
   const PostView = (props: PostWithUser) => {
+    const { post, author } = props;
+    const [likeCount, setLikeCount] = useState(post?.likes.length);
+    const [commentCount, setCommentCount] = useState(post?.comments.length);
     const time = data!.post!.title;
     console.log(time, "time");
 
@@ -188,7 +199,7 @@ export default function SinglePost(
 
         <div className="flex flex-col">
           <div className="flex gap-2 text-xs">
-            <div className="text-xs text-pink-100">{`@${
+            <div className="text-xs text-pink-400">{`@${
               data!.author.username ?? data?.author.name
             }`}</div>{" "}
             ·
@@ -199,7 +210,8 @@ export default function SinglePost(
           </div>
           <div className="flex items-center p-2">{data?.post?.content}</div>
           <div className="flex gap-2 text-xs">
-            {formattedDate} - {formattedTime}
+            {formattedDate} - {formattedTime} - {`${likeCount} like(s)`} -{" "}
+            {`${commentCount} comment(s)`}
           </div>
         </div>
       </div>
@@ -207,39 +219,8 @@ export default function SinglePost(
   };
 
   const CommentView = (props: PostWithUser) => {
-    const [liked, setLiked] = useState();
-    const [likeCount, setLikeCount] = useState(0);
     const ctx = api.useContext();
 
-    const { mutate, isLoading: isLiking } = api.posts.likeComment.useMutation({
-      //optimistically update the like count when the like button is pressed
-      onMutate: () => {
-        setLikeCount((prevCount) => (liked ? prevCount - 1 : prevCount + 1));
-      },
-      onSuccess: () => {
-        ctx.posts.getSinglePostById.invalidate();
-      },
-      onSettled: () => {
-        // Invalidate the posts query after the mutation is settled
-        ctx.posts.getSinglePostById.invalidate();
-      },
-      onError: (err) => {
-        // Check if there's a specific error code from the server
-        const errorMessageFromServer = err?.data?.code;
-        console.log(errorMessageFromServer, "error message from server");
-
-        // Handle different error scenarios accordingly
-        if (errorMessageFromServer === "UNAUTHORIZED") {
-          toast.error("You need to log in to like a post.");
-        } else if (errorMessageFromServer === "BAD_REQUEST") {
-          toast.error("Failed to like the post. Please try again later.");
-        } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
-          toast.error("You are liking too many posts. Please try again later.");
-        } else {
-          toast.error("An unexpected error occurred. Please try again later.");
-        }
-      },
-    });
     function timeOfPost(createdAt: string) {
       const currentTime = new Date().getTime();
       const commentTime = new Date(createdAt).getTime();
@@ -268,10 +249,11 @@ export default function SinglePost(
     }
 
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
         {props?.post?.comments.map((comment: any) => (
-          <div key={comment.id} className="flex border border-pink-200 p-3">
+          <Card className="flex p-2">
             <div className="h-14 w-14">
+              {/* ... Profile Image */}
               <Image
                 src={comment.profileImage}
                 alt="profileimage"
@@ -281,34 +263,47 @@ export default function SinglePost(
               />
             </div>
             <div className="flex flex-grow flex-col">
-              <div className="flex gap-2 text-xs">
-                <div className="text-xs text-pink-100">
-                  @{comment.authorName}
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pt-2">
+                {/* ... Author Name and Time */}
+                <div className="flex gap-2">
+                  <CardTitle className="text-xs text-pink-400">
+                    @{comment.authorName}
+                  </CardTitle>
+                  <CardDescription className="text-xs font-thin text-gray-500">
+                    {timeOfPost(comment.createdAt)}
+                  </CardDescription>
                 </div>
-                <div>·</div>
-                <div className="text-xs font-thin text-gray-500">
-                  {timeOfPost(comment.createdAt)}
-                </div>
-              </div>
-              <div className="flex items-center p-2">{comment.content}</div>
+              </CardHeader>
+              <CardContent className="pb-2">
+                {/* ... Comment Content */}
+                <div className="flex items-center p-2">{comment.content}</div>
+              </CardContent>
             </div>
+          </Card>
 
-            <div className="flex items-center text-xs text-pink-100">
-              <button
-                className="text-pink-100"
-                onClick={() => {
-                  mutate({ commentId: comment.id });
-                  // setLiked((prevLiked) => !prevLiked);
-                }}
-              >
-                {liked ? (
-                  <AiFillHeart size={15} />
-                ) : (
-                  <AiOutlineHeart size={15} />
-                )}
-              </button>
-            </div>
-          </div>
+          // <div key={comment.id} className="flex border border-yellow-200 p-3">
+          //   <div className="h-14 w-14">
+          //     <Image
+          //       src={comment.profileImage}
+          //       alt="profileimage"
+          //       width={200}
+          //       height={200}
+          //       className="rounded-full p-2"
+          //     />
+          //   </div>
+          //   <div className="flex flex-grow flex-col">
+          //     <div className="flex gap-2 text-xs">
+          //       <div className="text-xs text-pink-100">
+          //         @{comment.authorName}
+          //       </div>
+          //       <div>·</div>
+          //       <div className="text-xs font-thin text-gray-500">
+          //         {timeOfPost(comment.createdAt)}
+          //       </div>
+          //     </div>
+          //     <div className="flex items-center p-2">{comment.content}</div>
+          //   </div>
+          // </div>
         ))}
       </div>
     );
@@ -330,18 +325,16 @@ export default function SinglePost(
   return (
     <>
       <Head>
-        <title>Twitter Clone</title>
+        <title>`post {data.post?.id}`</title>
         <meta name="description" content="Generated by create-t3-app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex justify-center">
+      <main className="flex justify-center min-h-screen">
         <div className=" w-full  md:max-w-2xl">
           {data?.post && <PostView {...data} />}
-          <CreatePostWizard />
+          <CreateCommentWizard />
           <div className=" w-full  md:max-w-2xl">
-            {comment.map((comment) => {
-              return <CommentView key={comment.id} {...data} />;
-            })}
+            {data?.post && <CommentView {...data} />}
           </div>
         </div>
       </main>

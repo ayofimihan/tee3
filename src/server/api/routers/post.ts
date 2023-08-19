@@ -98,10 +98,11 @@ export const postRouter = createTRPCRouter({
         include: {
           likes: true,
           comments: {
+            orderBy: {
+              createdAt: "asc", // Order posts by createdAt in ascending order
+            },
             // Include the comments for each post
             include: {
-              //include the author of each post
-
               // Include the child comments for each comment which i dont totally understand
               childComments: {
                 include: {
@@ -144,7 +145,7 @@ export const postRouter = createTRPCRouter({
   create: privateProcedure
     .input(
       z.object({
-        content: z.string().min(1).max(100),
+        content: z.string().min(1).max(150),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -155,7 +156,7 @@ export const postRouter = createTRPCRouter({
       if (filter.isProfane(input.content)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Content contains profanity",
+          message: "You can't say that, say something nice",
         });
       }
       const { success } = await ratelimit.limit(authorId);
@@ -309,6 +310,51 @@ export const postRouter = createTRPCRouter({
         likesCount: comment.likes.length,
         postId: comment.postId,
       };
+    }),
+
+  //add new comment mutation
+  addComment: privateProcedure
+    .input(
+      z.object({
+        content: z.string().min(1).max(100),
+        postId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const authorId = ctx.userId;
+      const filter = new Filter();
+
+      //check if the content is profane
+      if (filter.isProfane(input.content)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Content contains profanity",
+        });
+      }
+      const { success } = await ratelimit.limit(authorId);
+      if (!success) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "You are posting too much",
+        });
+      }
+
+      // console.log(authorId);
+      if (!authorId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const author = await clerkClient.users.getUser(authorId);
+      if (!author) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const comment = await ctx.prisma.comment.create({
+        data: {
+          authorId,
+          authorName: "Champion",
+          content: input.content,
+          postId: input.postId,
+          profileImage: author.profileImageUrl,
+        },
+      });
+
+      return comment;
     }),
 });
 
