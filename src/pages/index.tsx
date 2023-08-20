@@ -56,9 +56,7 @@ export default function Home() {
         } else if (errorMessageFromServer === "BAD_REQUEST") {
           toast.error("You cant say that sorry. Say something nicer");
         } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
-          toast.error(
-            "You are posting too many posts. Try again in a few minutes"
-          );
+          toast.error("You are posting too many posts. Touch grass.");
         } else {
           toast.error("An unexpected error occurred. Please try again later.");
         }
@@ -84,7 +82,7 @@ export default function Home() {
         </div>
         <input
           type="text"
-          placeholder="kilon shele? click on the profile picture to sign out"
+          placeholder="kilon shele? click on the profile picture to sing out/manage account"
           className="  mr-4  w-full bg-transparent outline-none "
           onChange={(e) => setContent(e.target.value)}
           value={content}
@@ -170,9 +168,7 @@ export default function Home() {
           } else if (errorMessageFromServer === "BAD_REQUEST") {
             toast.error("Failed to like the post. Please try again later.");
           } else if (errorMessageFromServer === "TOO_MANY_REQUESTS") {
-            toast.error(
-              "You are liking too many posts. Please try again later."
-            );
+            toast.error("You are liking too many posts. Touch grass.");
           } else {
             toast.error(
               "An unexpected error occurred. Please try again later."
@@ -285,13 +281,7 @@ export default function Home() {
       <main className="flex justify-center">
         <div className=" w-full  md:max-w-3xl">
           <CreatePostWizard />
-          {!isSignedIn && (
-            //centered login page
-            <div className="flex h-screen items-center justify-center">
-              {" "}
-              <SignIn />
-            </div>
-          )}
+
           {isSignedIn && (
             <div className="flex flex-col">
               {data?.map((fullPost) => (
@@ -302,6 +292,7 @@ export default function Home() {
           <div className="flex justify-center border p-10 align-middle">
             You're all caught up!
           </div>
+          <div className="mt-10"></div>
         </div>
       </main>
       <Footer />

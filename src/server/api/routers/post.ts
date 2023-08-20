@@ -31,6 +31,12 @@ const ratelimit = new Ratelimit({
   analytics: true,
 });
 
+const likesRateLimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(4, "1m"),
+  analytics: true,
+});
+
 // Create a TRPC router for handling the 'post' resource
 export const postRouter = createTRPCRouter({
   // Define the 'getAll' query procedure
@@ -207,7 +213,8 @@ export const postRouter = createTRPCRouter({
       //check if the post exists
       if (!post) throw new TRPCError({ code: "FORBIDDEN" });
 
-      const { success } = await ratelimit.limit(userId);
+      //rATE LIMITING
+      const { success } = await likesRateLimit.limit(userId);
       if (!success) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
@@ -243,7 +250,7 @@ export const postRouter = createTRPCRouter({
         likesCount: post.likes.length,
       };
     }),
-  //like comment mutation
+  //TODO: like comment mutation
   likeComment: privateProcedure
     .input(
       z.object({
