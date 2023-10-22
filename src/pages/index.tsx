@@ -21,6 +21,7 @@ import { AiFillHeart } from "react-icons/ai";
 import { ProgressBar } from "./components/progressBar";
 import { SignIn } from "@clerk/nextjs";
 import Footer from "./components/footer";
+import timeLogic from "~/utils/timeLogic";
 
 export default function Home() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -177,40 +178,7 @@ export default function Home() {
         },
       });
 
-    function timeOfPost() {
-      const time = post.title;
-
-      // console.log(time);
-      const formattedTime = new Date(time).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      });
-      // console.log(formattedTime);
-
-      const currentTime = new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      });
-      // console.log(currentTime);
-      const timeDifference =
-        new Date(currentTime).getTime() - new Date(formattedTime).getTime();
-      // console.log(timeDifference);
-      const timeDifferenceInMinutes = timeDifference / 60000;
-      // console.log(timeDifferenceInMinutes);
-      const timeDifferenceInHours = timeDifferenceInMinutes / 60;
-      // console.log(timeDifferenceInHours);
-      const roundedTime = Math.round(timeDifferenceInHours);
-      if (timeDifferenceInHours < 1) {
-        return `${Math.round(timeDifferenceInMinutes)}m`;
-      }
-      return `${roundedTime}h`;
-    }
+   
     return (
       <div
         key={post.id}
@@ -239,7 +207,7 @@ export default function Home() {
             ·
             <div className="font-thin">
               {" "}
-              <Link href={`/post/${post.id}`}>{timeOfPost()} </Link>
+              <Link href={`/post/${post.id}`}>{timeLogic(post)} </Link>
             </div>
           </div>
           <div className="flex items-center p-2">
@@ -290,7 +258,7 @@ export default function Home() {
             </div>
           )}
           <div className="flex justify-center border p-10 align-middle">
-            You're all caught up!
+            You're all caught up! Touch some grass.
           </div>
           <div className="mt-10"></div>
         </div>

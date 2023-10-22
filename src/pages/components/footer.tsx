@@ -6,13 +6,16 @@ const Footer = () => {
   return (
     <footer className="fixed bottom-0 left-0 z-20 w-full border-t border-gray-200 bg-white/30  p-4 shadow backdrop-blur-sm dark:border-gray-600 dark:bg-gray-800 md:flex md:items-center md:justify-between md:p-6">
       <div className="flex gap-3">
-        <Link href={"https://github.com/ayofimihan/tee3"}>
+        <Link
+          href={"https://github.com/ayofimihan/retroreplay"}
+          className="cursor-pointer hover:text-red-500"
+        >
           <FiGithub size={20} />
         </Link>
         <SignOutButton>
           <button>
             {" "}
-            <LiaSignOutAltSolid size={20} />
+            <LiaSignOutAltSolid size={20} className=" hover:text-red-500" />
           </button>
         </SignOutButton>
       </div>

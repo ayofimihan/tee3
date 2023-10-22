@@ -9,6 +9,7 @@ import { prisma } from "~/server/db";
 import Image from "next/image";
 import Link from "next/link";
 import { HiOutlineHome } from "react-icons/hi";
+import timeLogic from "~/utils/timeLogic";
 //TODO: add dark mode toggle
 import { LightDarkToggle } from "./components/lightDarkToggle";
 
@@ -32,39 +33,39 @@ export default function ProfilePage(
   const PostView = (props: PostWithUser) => {
     const { id, title, content, authorId, likes, comments } = props;
 
-    function timeOfPost() {
-      const time = title;
-      // console.log(time);
-      const formattedTime = new Date(time).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      });
-      // console.log(formattedTime);
+    // function timeOfPost() {
+    //   const time = title;
+    //   // console.log(time);
+    //   const formattedTime = new Date(time).toLocaleDateString("en-US", {
+    //     month: "short",
+    //     day: "numeric",
+    //     year: "numeric",
+    //     hour: "numeric",
+    //     minute: "numeric",
+    //   });
+    //   // console.log(formattedTime);
 
-      const currentTime = new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      });
-      // console.log(currentTime);
-      const timeDifference =
-        new Date(currentTime).getTime() - new Date(formattedTime).getTime();
-      // console.log(timeDifference);
-      const timeDifferenceInMinutes = timeDifference / 60000;
-      console.log(timeDifferenceInMinutes);
-      const timeDifferenceInHours = timeDifferenceInMinutes / 60;
-      // console.log(timeDifferenceInHours);
-      const roundedTime = Math.round(timeDifferenceInHours);
-      if (timeDifferenceInHours < 1) {
-        return `${Math.round(timeDifferenceInMinutes)}m`;
-      }
-      return `${roundedTime}h`;
-    }
+    //   const currentTime = new Date().toLocaleDateString("en-US", {
+    //     month: "short",
+    //     day: "numeric",
+    //     year: "numeric",
+    //     hour: "numeric",
+    //     minute: "numeric",
+    //   });
+    //   // console.log(currentTime);
+    //   const timeDifference =
+    //     new Date(currentTime).getTime() - new Date(formattedTime).getTime();
+    //   // console.log(timeDifference);
+    //   const timeDifferenceInMinutes = timeDifference / 60000;
+    //   console.log(timeDifferenceInMinutes);
+    //   const timeDifferenceInHours = timeDifferenceInMinutes / 60;
+    //   // console.log(timeDifferenceInHours);
+    //   const roundedTime = Math.round(timeDifferenceInHours);
+    //   if (timeDifferenceInHours < 1) {
+    //     return `${Math.round(timeDifferenceInMinutes)}m`;
+    //   }
+    //   return `${roundedTime}h`;
+    // }
     return (
       <Link href={`/post/${id}`} className="hover:bg-pink-100">
         <div key={id} className="flex border border-pink-200 p-3  ">
@@ -87,7 +88,7 @@ export default function ProfilePage(
               ·
               <div className="font-thin">
                 {" "}
-                <Link href={`/post/${id}`}>{timeOfPost()} </Link>
+                <Link href={`/post/${id}`}>{timeLogic(props)} </Link>
               </div>
             </div>
             <div className="flex items-center break-all p-2">{content}</div>{" "}
