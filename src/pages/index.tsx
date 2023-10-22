@@ -11,16 +11,16 @@ import { api } from "~/utils/api";
 import { useAuth } from "@clerk/nextjs";
 import { RouterOutputs } from "~/utils/api";
 import Image from "next/image";
-import { LoadingScreen } from "./components/loader";
-import { SmallLoadingSpinner } from "./components/loader";
+import { LoadingScreen } from "../components/loader";
+import { SmallLoadingSpinner } from "../components/loader";
 import { useState as UseState, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { AiOutlineHeart } from "react-icons/ai";
 import { AiFillHeart } from "react-icons/ai";
-import { ProgressBar } from "./components/progressBar";
+import { ProgressBar } from "../components/progressBar";
 import { SignIn } from "@clerk/nextjs";
-import Footer from "./components/footer";
+import Footer from "../components/footer";
 import timeLogic from "~/utils/timeLogic";
 
 export default function Home() {
@@ -178,7 +178,6 @@ export default function Home() {
         },
       });
 
-   
     return (
       <div
         key={post.id}

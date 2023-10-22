@@ -11,7 +11,7 @@ import Link from "next/link";
 import { HiOutlineHome } from "react-icons/hi";
 import timeLogic from "~/utils/timeLogic";
 //TODO: add dark mode toggle
-import { LightDarkToggle } from "./components/lightDarkToggle";
+import { LightDarkToggle } from "../components/lightDarkToggle";
 
 export default function ProfilePage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>

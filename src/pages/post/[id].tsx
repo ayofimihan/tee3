@@ -12,11 +12,11 @@ import { prisma } from "~/server/db";
 import superjson from "superjson";
 import { UserButton } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { SmallLoadingSpinner } from "../components/loader";
-import { ProgressBar } from "../components/progressBar";
+import { SmallLoadingSpinner } from "../../components/loader";
+import { ProgressBar } from "../../components/progressBar";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
-import CommentView from "../components/commentView";
+import CommentView from "../../components/commentView";
 
 import timeLogic from "~/utils/timeLogic";
 
